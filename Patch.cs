@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace ADOFAI_CMO
 {
   [HarmonyPatch(typeof(scrExtImgHolder), "LoadTexture")]
-  internal class Patch
+  public class Patch
   {
     public static bool Prefix(ref Texture2D __result, string filePath, out LoadResult status, int maxSideSize = -1)
     {
@@ -29,7 +29,7 @@ namespace ADOFAI_CMO
           return false;
         }
         byte[] data = RDFile.ReadAllBytes(filePath, out status);
-        texture2D = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        texture2D = new Texture2D(2, 2, TextureFormat.EXT5, false);
         if (!texture2D.LoadImage(data))
         {
           __result = (Texture2D)null;
