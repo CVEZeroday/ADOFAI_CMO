@@ -29,7 +29,7 @@ namespace ADOFAI_CMO
           return false;
         }
         byte[] data = RDFile.ReadAllBytes(filePath, out status);
-        texture2D = new Texture2D(2, 2, TextureFormat.EXT5, false);
+        texture2D = new Texture2D(2, 2, TextureFormat.DXT5, false);
         if (!texture2D.LoadImage(data))
         {
           __result = (Texture2D)null;
