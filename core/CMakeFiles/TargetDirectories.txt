@@ -1,0 +1,3 @@
+/home/cvezeroday/ADOFAI_CMO/core/CMakeFiles/ADOFAI_CMO_CORE-0.0.1.out.dir
+/home/cvezeroday/ADOFAI_CMO/core/CMakeFiles/edit_cache.dir
+/home/cvezeroday/ADOFAI_CMO/core/CMakeFiles/rebuild_cache.dir

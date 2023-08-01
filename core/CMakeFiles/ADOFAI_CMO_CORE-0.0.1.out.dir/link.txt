@@ -1,0 +1,1 @@
+gcc -g CMakeFiles/ADOFAI_CMO_CORE-0.0.1.out.dir/src/main.c.o CMakeFiles/ADOFAI_CMO_CORE-0.0.1.out.dir/src/core.c.o CMakeFiles/ADOFAI_CMO_CORE-0.0.1.out.dir/src/resizer.c.o CMakeFiles/ADOFAI_CMO_CORE-0.0.1.out.dir/src/converter.c.o -o build/ADOFAI_CMO_CORE-0.0.1.out 
