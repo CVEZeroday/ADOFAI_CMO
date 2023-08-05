@@ -1,3 +1,4 @@
 CompileFlags:
   Add:
     - "-I/home/cvezeroday/ADOFAI_CMO/core/include"
+    - "-fdeclspec"

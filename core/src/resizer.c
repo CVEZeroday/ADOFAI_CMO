@@ -14,19 +14,52 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize.h"
 
-void pngResizer(const uint8_t* src_data, int src_width, int src_height, 
-                uint8_t* dst_data, int dst_width, int dst_height)
+int resize(imageData_t* imgData, res_t dst_res)
 {
-  stbir_resize_uint8(src_data, src_width, src_height, 0, dst_data, dst_width, dst_height, 0, 4); 
+  res_t src_res = imgData->res;
+
+  double w_ratio = (double)dst_res.width / src_res.width;
+  double h_ratio = (double)dst_res.height / src_res.height;
+
+  double ratio = (w_ratio < h_ratio) ? w_ratio : h_ratio;
+
+  dst_res.width = (int)(src_res.width * ratio);
+  dst_res.height = (int)(src_res.height * ratio);
+
+  dst_res.width = (dst_res.width + 3) & ~3;
+  dst_res.height = (dst_res.height + 3) & ~3;
+
+  uint8_t* tmp = imgData->bytes;
+  if (imgData->ext == PNG)
+  {
+    imgData->bytes = pngResize(imgData->bytes, &src_res, &dst_res);
+  }
+  else if (imgData->ext == JPG)
+  {
+    imgData->bytes = jpgResize(imgData->bytes, &src_res, &dst_res);
+  }
+  else return ERR;
+
+  imgData->res = dst_res;
+  imgData->ratio = ratio;
+
+  free(tmp);
+  return 0;
 }
 
-void jpgResizer(const uint8_t* src_data, int src_width, int src_height, 
-                uint8_t* dst_data, int dst_width, int dst_height)
+uint8_t* pngResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res)
 {
-  stbir_resize_uint8(src_data, src_width, src_height, 0, dst_data, dst_width, dst_height, 0, 3); 
+  uint8_t* _dst = malloc(dst_res->width * dst_res->height * 4);
+  stbir_resize_uint8(src_data, src_res->width, src_res->height, 0, _dst, dst_res->width, dst_res->height, 0, 4); 
+  return _dst;
+}
+
+uint8_t* jpgResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res)
+{
+  uint8_t* _dst = malloc(dst_res->width * dst_res->height * 3);
+  stbir_resize_uint8(src_data, src_res->width, src_res->height, 0, _dst, dst_res->width, dst_res->height, 0, 3);
+  return _dst;
 }

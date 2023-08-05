@@ -9,69 +9,151 @@
 /*               (T.Y.Kim)                  */
 /********************************************/
 
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/prettywriter.h"
-
 #include "core.h"
 
 using namespace rapidjson;
 
-bool ParseJson(Document& doc, const std::string& jsonData)
+// filename requires .adofai file path
+// mode 0: optimize all
+// mode 1: resize only
+// mode 2: convert to dxt only
+// target_w, target_h requires the target resolution (ignored in mode 2)
+int convertLevel(const char* filename, int mode, int target_w, int target_h, int clr_files)
 {
-  if (doc.Parse(jsonData.c_str()).HasParseError())
-    return false;
-  return doc.IsObject();
-}
+  if (mode < 0 || mode > 2)
+    return INVALID_MODE_ERR;
 
-std::string JsonDocToString(Document& doc, bool isPretty = false)
-{
-  StringBuffer buf;
-  if(isPretty)
-  {
-    PrettyWriter<StringBuffer> writer(buf);
-    doc.Accept(writer);
-  }
-  else
-  {
-    Writer<StringBuffer> writer(buf);
-    doc.Accept(writer);
-  }
-  return buf.GetString();
-}
-
-int parse(const char* filename)
-{
   std::ifstream file(filename);
+  if (!file.is_open())
+    return OPEN_FILE_ERR;
+
   std::stringstream ss;
+  res_t target_res;
 
   ss << file.rdbuf();
 
   Document level;
-  ParseJson(level, ss.str());
+  level.Parse(ss.str().c_str());
 
-  const Value& valueInfo = level["actions"];
-  for (auto& data : valueInfo.GetArray())
+  if (level.HasParseError())
+    return PARSE_ERR;
+
+  if (!level.HasMember("actions"))
+    return INVALID_LEVEL_ERR;
+  auto& actions = level["actions"];
+  for (SizeType i = 0; i < actions.Size(); ++i)
   {
-    if (strcmp(data["eventType"].GetString(), "AddDecoration") == 0)
+    if (strcmp(actions[i]["eventType"].GetString(), "AddDecoration") == 0)
     {
+      image_t _image;
 
+      if (!level.HasMember("decorationImage"))
+        return INVALID_LEVEL_ERR;
+      parseImageName(actions[i]["decorationImage"].GetString(), &_image);
+
+      if (_image.data.ext == ERR)
+        return INVALID_EXT_ERR;
+
+      if (loadImage(&_image.data) == ERR)
+        return LOAD_IMAGE_ERR;
+
+      switch (mode)
+      {
+        case 0:
+        case 1:
+          target_res.width = target_w;
+          target_res.height = target_h;
+          break;
+        case 2:
+          target_res = _image.data.res;
+          break;
+      }
+
+      if (resize(&_image.data, target_res) == ERR)
+        return RESIZE_ERR;
+
+      if (mode != 1)
+      {
+        if (convert2dxt(&_image.data) == ERR)
+          return DXT_CONVERSION_ERR;
+
+        std::string _filename = _image.filename;
+        if (_image.data.ext == DXT5)
+          _filename += ".dxt5";
+        if (_image.data.ext == DXT1)
+          _filename += ".dxt1";
+
+        if (!level.HasMember("decorationImage"))
+          return INVALID_LEVEL_ERR;
+        actions[i]["decorationImage"].SetString(_filename.c_str(), level.GetAllocator());
+      }
+
+      if (saveImage(&_image.data, _image.filename.c_str()) == ERR)
+        return SAVE_IMAGE_ERR;
+      if (clr_files) 
+        if (deleteImage(&_image.data, _image.filename.c_str(), _image.data.ext - 2) == ERR)
+          return DELETE_IMAGE_ERR;
+
+      auto& _scale = actions[i]["scale"];
+      _scale[0].SetInt(_scale[0].GetInt() * _image.data.ratio);
+      _scale[1].SetInt(_scale[1].GetInt() * _image.data.ratio);
+
+      images.insert({actions[i]["tag"].GetString(), _image});
     }
   }
 
-  for (auto& data : valueInfo.GetArray())
+  for (SizeType i = 0; i < actions.Size(); ++i)
   {
-    if (strcmp(data["eventType"].GetString(), "MoveDecoration") == 0)
+    if (strcmp(actions[i]["eventType"].GetString(), "MoveDecoration") == 0)
     {
-
+      auto it = images.find(actions[i]["tag"].GetString());
+      if (it != images.end())
+      {
+        auto& _scale = actions[i]["scale"];
+        _scale[0].SetInt(_scale[0].GetInt() * (*it).second.data.ratio);
+        _scale[1].SetInt(_scale[1].GetInt() * (*it).second.data.ratio);
+      }
     }
   }
 
+  StringBuffer buf;
+  Writer<StringBuffer> writer(buf);
+  level.Accept(writer);
+
+  if (clr_files)
+  {
+    std::ofstream output_file(filename);
+    output_file << buf.GetString();
+  }
+  else
+  {
+    std::ofstream output_file("mod_" + std::string(filename));
+    output_file << buf.GetString();
+  }
   return 0;
+}
+
+void parseImageName(std::string filename, image_t *img)
+{
+  img->filename = filename;
+  std::string ext = filename.substr(filename.find_last_of(".") + 1);
+  for (auto& _ext : png_exts)
+  {  
+    if (_ext == ext)
+    {
+      img->data.ext = PNG;
+      return;
+    }
+  }
+  for (auto& _ext : jpg_exts)
+  {
+    if (_ext == ext)
+    {
+      img->data.ext = JPG;
+      return;
+    }
+  }
+
+  img->data.ext = ERR;
+  return;
 }

@@ -16,13 +16,30 @@
 #define STB_DXT_IMPLEMENTATION
 #include "stb_dxt.h"
 
-uint8_t* png2dxt5(uint8_t* src)
+int convert2dxt(imageData_t* imgData)
 {
-
+  uint8_t* tmp = imgData->bytes;
+  if (imgData->ext == PNG)
+  {
+    imgData->bytes = png2dxt5(imgData->bytes);
+  }
+  else if (imgData->ext == JPG)
+  {
+    imgData->bytes = jpg2dxt1(imgData->bytes);
+  }
+  else return ERR;
+  
+  free(tmp);
   return 0;
 }
 
-uint8_t* jpg2dxt1(uint8_t* src)
+uint8_t* png2dxt5(const uint8_t* src)
+{
+  stb_compress_dxt_block(unsigned char *dest, const unsigned char *src_rgba_four_bytes_per_pixel, int alpha, int mode);
+  return 0;
+}
+
+uint8_t* jpg2dxt1(const uint8_t* src)
 {
 
   return 0;
