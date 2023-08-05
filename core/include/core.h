@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
 #include <stdint.h>
 
 enum errno_e
@@ -49,30 +50,24 @@ typedef struct res_s
 
 typedef struct imageData_s
 {
-  int ext;
-  double ratio;
-  res_t res;
-  uint8_t* bytes;
+  int ext; // 확장자. 0: png, 1: jpg, 2: dxt5, 3: dxt1
+  int channels; // 채널 수
+  double ratio; // 리사이징 비율
+  res_t res; // 해상도
+  FILE* fp; // 파일 포인터
 } imageData_t;
 
 /* image.c */
-int loadImage(imageData_t* imgData);
-int saveImage(imageData_t* imgData, const char* filename);
-int deleteImage(imageData_t* imgData, const char* filename, int ext);
-
-/* converter.c */
-int convert2dxt(imageData_t* imgData);
-uint8_t* png2dxt5(const uint8_t* src);
-uint8_t* jpg2dxt1(const uint8_t* src);
+int loadImage(imageData_t* imgData, const char* filename);
 
 /* resizer.c */
-int resize(imageData_t* imgData, res_t dst_res);
+int resize(imageData_t* imgData, res_t dst_res, const char* filename);
 uint8_t* pngResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res);
 uint8_t* jpgResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res);
 
 /* core.cc */
 __declspec(dllexport)
-int convertLevel(const char* filename, int mode, int target_w, int target_h);
+int convertLevel(const char* filename, int mode, int target_w, int target_h, int clr_files);
 
 #ifdef __cplusplus
 }
@@ -94,9 +89,9 @@ int convertLevel(const char* filename, int mode, int target_w, int target_h);
 
 typedef struct image_s
 {
-  std::string filename;
-  std::string tag;
-  imageData_t data;
+  std::string filename; // 파일 이름
+  std::string tag; // 이미지 태그
+  imageData_t data; // C언어용 이미지 데이터
 } image_t;
 
 static std::map<std::string, image_t> images;
@@ -112,5 +107,9 @@ static std::vector<std::string> jpg_exts ({
 });
 
 void parseImageName(std::string filename, image_t *img);
+
+/* converter.cc */
+int convert2dxt(image_t* img);
+
 #endif
 #endif

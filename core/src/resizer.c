@@ -16,9 +16,13 @@
 #include "stb_image.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
-int resize(imageData_t* imgData, res_t dst_res)
+int resize(imageData_t* imgData, res_t dst_res, const char* filename)
 {
+  uint8_t* _data = stbi_load(filename, &imgData->res.width, &imgData->res.height, &imgData->channels, 0);
+
   res_t src_res = imgData->res;
 
   double w_ratio = (double)dst_res.width / src_res.width;
@@ -31,23 +35,32 @@ int resize(imageData_t* imgData, res_t dst_res)
 
   dst_res.width = (dst_res.width + 3) & ~3;
   dst_res.height = (dst_res.height + 3) & ~3;
-
-  uint8_t* tmp = imgData->bytes;
+  
+  uint8_t* _tmp;
   if (imgData->ext == PNG)
   {
-    imgData->bytes = pngResize(imgData->bytes, &src_res, &dst_res);
+    _tmp = pngResize(_data, &src_res, &dst_res);
+    if (!stbi_write_png(imgData->fp, dst_res.width, dst_res.height, imgData->channels, _tmp, dst_res.width * imgData->channels))
+      goto err;
   }
   else if (imgData->ext == JPG)
   {
-    imgData->bytes = jpgResize(imgData->bytes, &src_res, &dst_res);
+    _tmp = jpgResize(_data, &src_res, &dst_res);
+    if (!stbi_write_jpg(imgData->fp, dst_res.width, dst_res.height, imgData->channels, _tmp, dst_res.width * imgData->channels))
+      goto err;
   }
   else return ERR;
 
   imgData->res = dst_res;
   imgData->ratio = ratio;
 
-  free(tmp);
+  stbi_image_free(_data);
+  free(_tmp);
   return 0;
+
+err:
+  stbi_image_free(_data);
+  return -1;
 }
 
 uint8_t* pngResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res)

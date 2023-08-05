@@ -9,27 +9,17 @@
 /*               (T.Y.Kim)                  */
 /********************************************/
 
+#include <stdio.h>
+
 #include "core.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
-int loadImage(imageData_t* imgData)
+int loadImage(imageData_t* imgData, const char* filename) // filename은 _파일명.png 형태
 {
+  FILE* _fp;
+  _fp = fopen(filename, "wb"); // _파일명.png 생성
+  if (_fp == NULL) return ERR;
 
-  return 0;
-}
-
-int saveImage(imageData_t* imgData, const char* filename)
-{
-
-  return 0;
-}
-
-int deleteImage(imageData_t* imgData, const char* filename, int ext)
-{
+  imgData->fp = _fp;
 
   return 0;
 }

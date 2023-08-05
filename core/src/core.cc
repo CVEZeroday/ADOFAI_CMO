@@ -9,6 +9,9 @@
 /*               (T.Y.Kim)                  */
 /********************************************/
 
+/* This projects requires NVTT 3 and NVIDIA GPU. */
+/* AMD GPU Acceleration is not supported yet. */
+
 #include "core.h"
 
 using namespace rapidjson;
@@ -54,7 +57,8 @@ int convertLevel(const char* filename, int mode, int target_w, int target_h, int
       if (_image.data.ext == ERR)
         return INVALID_EXT_ERR;
 
-      if (loadImage(&_image.data) == ERR)
+      std::string _imagename("_" + _image.filename); // _imagename은 _파일명.확장자
+      if (loadImage(&_image.data, _imagename.c_str()) == ERR)
         return LOAD_IMAGE_ERR;
 
       switch (mode)
@@ -69,29 +73,28 @@ int convertLevel(const char* filename, int mode, int target_w, int target_h, int
           break;
       }
 
-      if (resize(&_image.data, target_res) == ERR)
+      if (resize(&_image.data, target_res, _image.filename.c_str()) == ERR)
         return RESIZE_ERR;
 
       if (mode != 1)
       {
-        if (convert2dxt(&_image.data) == ERR)
+        if (convert2dxt(&_image) == ERR)
           return DXT_CONVERSION_ERR;
 
-        std::string _filename = _image.filename;
         if (_image.data.ext == DXT5)
-          _filename += ".dxt5";
+          _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt5";
         if (_image.data.ext == DXT1)
-          _filename += ".dxt1";
+          _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt1";
 
         if (!level.HasMember("decorationImage"))
           return INVALID_LEVEL_ERR;
-        actions[i]["decorationImage"].SetString(_filename.c_str(), level.GetAllocator());
+        actions[i]["decorationImage"].SetString(_image.filename.c_str(), level.GetAllocator());
       }
 
-      if (saveImage(&_image.data, _image.filename.c_str()) == ERR)
-        return SAVE_IMAGE_ERR;
+      rename(_imagename.c_str(), _image.filename.c_str()); // 임시 이름을 확장자 맞춰서 복구
+      fclose(_image.data.fp);
       if (clr_files) 
-        if (deleteImage(&_image.data, _image.filename.c_str(), _image.data.ext - 2) == ERR)
+        if (remove(_image.filename.c_str()) == ERR)
           return DELETE_IMAGE_ERR;
 
       auto& _scale = actions[i]["scale"];
