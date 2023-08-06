@@ -11,6 +11,14 @@
 /*               (T.Y.Kim)                  */
 /********************************************/
 
+#define DEBUG
+
+#ifdef DEBUG
+#define DEBUF_PRINTF(...) printf(...);
+#else
+#define DEBUG_PRINTF(...) (0)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,7 +38,8 @@ enum errno_e
   RESIZE_ERR = -8,
   DXT_CONVERSION_ERR = -9,
   SAVE_IMAGE_ERR = -10,
-  DELETE_IMAGE_ERR = -11
+  DELETE_IMAGE_ERR = -11,
+  NO_MEM_ERR = -12,
 };
 
 enum ext_e
@@ -67,7 +76,7 @@ uint8_t* jpgResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res);
 
 /* core.cc */
 __declspec(dllexport)
-int convertLevel(const char* filename, int mode, int target_w, int target_h, int clr_files);
+int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files);
 
 #ifdef __cplusplus
 }
@@ -83,9 +92,10 @@ int convertLevel(const char* filename, int mode, int target_w, int target_h, int
 #include <vector>
 
 #include "rapidjson/document.h"
-#include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/prettywriter.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/encodings.h"
 
 typedef struct image_s
 {
@@ -107,6 +117,7 @@ static std::vector<std::string> jpg_exts ({
 });
 
 void parseImageName(std::string filename, image_t *img);
+bool removeUTF8BOM(FILE* fp);
 
 /* converter.cc */
 int convert2dxt(image_t* img);

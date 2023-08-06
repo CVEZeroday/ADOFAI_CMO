@@ -16,8 +16,8 @@
 int loadImage(imageData_t* imgData, const char* filename) // filename은 _파일명.png 형태
 {
   FILE* _fp;
-  _fp = fopen(filename, "wb"); // _파일명.png 생성
-  if (_fp == NULL) return ERR;
+  _fp = fopen(filename, "w+"); // _파일명.png 생성
+  if (!_fp) return ERR;
 
   imgData->fp = _fp;
 
