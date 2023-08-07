@@ -40,13 +40,13 @@ int resize(imageData_t* imgData, res_t dst_res, const char* filename)
   if (imgData->ext == PNG)
   {
     _tmp = pngResize(_data, &src_res, &dst_res);
-    if (!stbi_write_png(imgData->fp, dst_res.width, dst_res.height, imgData->channels, _tmp, dst_res.width * imgData->channels))
+    if (!stbi_write_png(filename, dst_res.width, dst_res.height, imgData->channels, _tmp, dst_res.width * imgData->channels))
       goto err;
   }
   else if (imgData->ext == JPG)
   {
     _tmp = jpgResize(_data, &src_res, &dst_res);
-    if (!stbi_write_jpg(imgData->fp, dst_res.width, dst_res.height, imgData->channels, _tmp, dst_res.width * imgData->channels))
+    if (!stbi_write_jpg(filename, dst_res.width, dst_res.height, imgData->channels, _tmp, dst_res.width * imgData->channels))
       goto err;
   }
   else return ERR;

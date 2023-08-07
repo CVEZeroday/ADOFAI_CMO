@@ -13,10 +13,10 @@
 
 #include "core.h"
 
-int loadImage(imageData_t* imgData, const char* filename) // filename은 _파일명.png 형태
+int loadImage(imageData_t* imgData, const char* filename) 
 {
   FILE* _fp;
-  _fp = fopen(filename, "w+"); // _파일명.png 생성
+  _fp = fopen(filename, "w+");
   if (!_fp) return ERR;
 
   imgData->fp = _fp;

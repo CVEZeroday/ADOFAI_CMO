@@ -10,7 +10,7 @@
 /********************************************/
 
 /* This projects requires NVTT 3 and NVIDIA GPU. */
-/* AMD GPU Acceleration is not supported yet. */
+/* Other GPUs are not supported yet. */
 
 #include "core.h"
 
@@ -21,65 +21,68 @@ using namespace rapidjson;
 // mode 1: resize only
 // mode 2: convert to dxt only
 // target_w, target_h requires the target resolution (ignored in mode 2)
-int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files)
+// delete existing image file if clr_files flag is set
+int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files, out_t* out)
 {
   if (mode < 0 || mode > 2)
     return INVALID_MODE_ERR;
 
-  res_t target_res;
+  res_t _target_res;
+  image_t _image;
 
-      image_t _image;
+  parseImageName(filename, &_image);
 
-      parseImageName(filename, &_image);
+  if (_image.data.ext == ERR)
+    return INVALID_EXT_ERR;
 
-      if (_image.data.ext == ERR)
-        return INVALID_EXT_ERR;
+  int _find = _image.filename.rfind("\\") + 1;
+  std::string _imagepath = _image.filename.substr(0, _find);
+  std::string _imagename = "_" + _image.filename.substr(_find, _image.filename.length() - _find);
 
-      int find = _image.filename.rfind("\\") + 1;
+  if (loadImage(&_image.data, (_imagepath + _imagename).c_str()) == ERR)
+    return LOAD_IMAGE_ERR;
+  std::cout << "making new image: " << _imagename << "\n";
 
-      std::string _imagepath = _image.filename.substr(0, find);
-      std::string _imagename = "_" + _image.filename.substr(find, _image.filename.length() - find);
-      if (loadImage(&_image.data, (_imagepath + _imagename).c_str()) == ERR)
-        return LOAD_IMAGE_ERR;
-      std::cout << "making new image: " << _imagename << "\n";
+  switch (mode)
+  {
+    case 0:
+    case 1:
+      _target_res.width = target_w;
+      _target_res.height = target_h;
+      break;
+    case 2:
+      _target_res = _image.data.res;
+      break;
+  }
 
-      switch (mode)
-      {
-        case 0:
-        case 1:
-          target_res.width = target_w;
-          target_res.height = target_h;
-          break;
-        case 2:
-          target_res = _image.data.res;
-          break;
-      }
+  if (resize(&_image.data, _target_res, _image.filename.c_str()) == ERR)
+    return RESIZE_ERR;
+  std::cout << "resizing image: " << _image.filename << "\n";
 
-      if (resize(&_image.data, target_res, _image.filename.c_str()) == ERR)
-        return RESIZE_ERR;
-      std::cout << "resizing image: " << _image.filename << "\n";
+  if (mode != 1)
+  {
+    if (convert2dxt(&_image) == ERR)
+      return DXT_CONVERSION_ERR;
+    std::cout << "converting image: " << _image.filename << "\n";
 
-      if (mode != 1)
-      {
-        if (convert2dxt(&_image) == ERR)
-          return DXT_CONVERSION_ERR;
-        std::cout << "converting image: " << _image.filename << "\n";
+    if (_image.data.ext == DXT5)
+      _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt5";
+    if (_image.data.ext == DXT1)
+      _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt1";
 
-        if (_image.data.ext == DXT5)
-          _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt5";
-        if (_image.data.ext == DXT1)
-          _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt1";
+  }
 
-      }
+  rename(_imagename.c_str(), _image.filename.c_str());
+  std::cout << "renaming image: " << _image.filename << "\n";
 
-      rename(_imagename.c_str(), _image.filename.c_str()); // 임시 이름을 확장자 맞춰서 복구
-      std::cout << "renaming image: " << _image.filename << "\n";
+  fclose(_image.data.fp);
+  if (clr_files) 
+    if (remove(_image.filename.c_str()) == ERR)
+      return DELETE_IMAGE_ERR;
 
-      fclose(_image.data.fp);
-      if (clr_files) 
-        if (remove(_image.filename.c_str()) == ERR)
-          return DELETE_IMAGE_ERR;
-
+  out->ratio = _image.data.ratio;
+  out->mod_filename = _image.filename.c_str();
+  
   return 0;
 }
 
@@ -106,17 +109,4 @@ void parseImageName(std::string filename, image_t *img)
 
   img->data.ext = ERR;
   return;
-}
-
-bool removeUTF8BOM(FILE* fp)
-{
-  unsigned char bom[3] = { 0 };
-  fread(bom, sizeof(unsigned char), 3, fp);
-  if (bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF)
-  {
-    fseek(fp, 3, SEEK_SET);
-    return true;
-  }
-  fseek(fp, 0, SEEK_SET);
-  return false;
 }

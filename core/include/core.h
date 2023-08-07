@@ -66,6 +66,12 @@ typedef struct imageData_s
   FILE* fp; // 파일 포인터
 } imageData_t;
 
+typedef struct out_s
+{
+  double ratio;
+  const char* mod_filename;
+} out_t;
+
 /* image.c */
 int loadImage(imageData_t* imgData, const char* filename);
 
@@ -76,7 +82,7 @@ uint8_t* jpgResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res);
 
 /* core.cc */
 __declspec(dllexport)
-int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files);
+int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files, out_t* out);
 
 #ifdef __cplusplus
 }
@@ -100,11 +106,8 @@ int convertImage(const char* filename, int mode, int target_w, int target_h, int
 typedef struct image_s
 {
   std::string filename; // 파일 이름
-  std::string tag; // 이미지 태그
   imageData_t data; // C언어용 이미지 데이터
 } image_t;
-
-static std::map<std::string, image_t> images;
 
 static std::vector<std::string> png_exts ({
   "png"
