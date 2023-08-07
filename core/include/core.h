@@ -76,13 +76,13 @@ typedef struct out_s
 int loadImage(imageData_t* imgData, const char* filename);
 
 /* resizer.c */
-int resize(imageData_t* imgData, res_t dst_res, const char* filename);
+int resize(imageData_t* imgData, res_t dst_res, const char* filename, double n);
 uint8_t* pngResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res);
 uint8_t* jpgResize(const uint8_t* src_data, res_t* src_res, res_t* dst_res);
 
 /* core.cc */
 __declspec(dllexport)
-int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files, out_t* out);
+int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files, double n, out_t* out);
 
 #ifdef __cplusplus
 }
@@ -120,7 +120,6 @@ static std::vector<std::string> jpg_exts ({
 });
 
 void parseImageName(std::string filename, image_t *img);
-bool removeUTF8BOM(FILE* fp);
 
 /* converter.cc */
 int convert2dxt(image_t* img);

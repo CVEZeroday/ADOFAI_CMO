@@ -19,16 +19,22 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-int resize(imageData_t* imgData, res_t dst_res, const char* filename)
+int resize(imageData_t* imgData, res_t dst_res, const char* filename, double n)
 {
   uint8_t* _data = stbi_load(filename, &imgData->res.width, &imgData->res.height, &imgData->channels, 0);
 
   res_t src_res = imgData->res;
+  if (src_res.width <= dst_res.width * n ||
+    src_res.height <= dst_res.height * n)
+  {
+    stbi_image_free(_data);
+    return 0;
+  }
 
   double w_ratio = (double)dst_res.width / src_res.width;
   double h_ratio = (double)dst_res.height / src_res.height;
 
-  double ratio = (w_ratio < h_ratio) ? w_ratio : h_ratio;
+  double ratio = (w_ratio > h_ratio) ? w_ratio : h_ratio;
 
   dst_res.width = (int)(src_res.width * ratio);
   dst_res.height = (int)(src_res.height * ratio);

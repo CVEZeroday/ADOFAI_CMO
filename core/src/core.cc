@@ -22,7 +22,7 @@ using namespace rapidjson;
 // mode 2: convert to dxt only
 // target_w, target_h requires the target resolution (ignored in mode 2)
 // delete existing image file if clr_files flag is set
-int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files, out_t* out)
+int convertImage(const char* filename, int mode, int target_w, int target_h, int clr_files, double n, out_t* out)
 {
   if (mode < 0 || mode > 2)
     return INVALID_MODE_ERR;
@@ -55,7 +55,7 @@ int convertImage(const char* filename, int mode, int target_w, int target_h, int
       break;
   }
 
-  if (resize(&_image.data, _target_res, _image.filename.c_str()) == ERR)
+  if (resize(&_image.data, _target_res, filename, n) == ERR)
     return RESIZE_ERR;
   std::cout << "resizing image: " << _image.filename << "\n";
 
@@ -66,22 +66,22 @@ int convertImage(const char* filename, int mode, int target_w, int target_h, int
     std::cout << "converting image: " << _image.filename << "\n";
 
     if (_image.data.ext == DXT5)
-      _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt5";
+      _imagename = _imagename.substr(_imagename.find_last_of(".")) += ".dxt5";
     if (_image.data.ext == DXT1)
-      _image.filename = _image.filename.substr(_image.filename.find_last_of(".")) += ".dxt1";
+      _imagename = _imagename.substr(_imagename.find_last_of(".")) += ".dxt1";
 
   }
 
-  rename(_imagename.c_str(), _image.filename.c_str());
-  std::cout << "renaming image: " << _image.filename << "\n";
-
+  rename(_image.filename.c_str(), (_imagepath + _imagename).c_str());
+  std::cout << "renaming image: " << _imagepath + _imagename << "\n";
   fclose(_image.data.fp);
+
   if (clr_files) 
     if (remove(_image.filename.c_str()) == ERR)
       return DELETE_IMAGE_ERR;
 
   out->ratio = _image.data.ratio;
-  out->mod_filename = _image.filename.c_str();
+  out->mod_filename = (_imagepath + _imagename).c_str();
   
   return 0;
 }
