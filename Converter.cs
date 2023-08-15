@@ -32,10 +32,10 @@ namespace ADOFAI_Custom_Optimization_mod
   {
 
     [DllImport("CMO_CORE.dll")]
-    public static extern int convertImage(string filename, int mode, int target_w, int target_h, int clr_files, out out_s _out);
+    public static extern int convertImage(string filename, int mode, int target_w, int target_h, int clr_files, double n, out out_s _out);
 
     private Dictionary<string, double> image_ratio;
-    public static int convertLevel(string levelfile, int mode, int targrt_w, int target_h, int clr_files)
+    public static int convertLevel(string levelfile, int mode, int targrt_w, int target_h, double n, int clr_files)
     {
       images = new Dictionary<string, image_s>();
 
@@ -50,7 +50,7 @@ namespace ADOFAI_Custom_Optimization_mod
         if (data["eventType"].ToString() == "AddDecoration")
         {
           out_s _out;
-          int ret = convertImage(data["decorationImage"].ToString(), modr, target_w, target_h, clr_files, _out);
+          int ret = convertImage(data["decorationImage"].ToString(), mode, target_w, target_h, clr_files, n, _out);
           if (ret) return ret;
         
           data["decorationImage"] = _out.mod_filename;

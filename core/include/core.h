@@ -15,6 +15,8 @@
 
 #ifdef DEBUG
 #define DEBUF_PRINTF(...) printf(...);
+#elifdef RELEASE
+#define DEBUG_PRINTF(...) (0)
 #else
 #define DEBUG_PRINTF(...) (0)
 #endif

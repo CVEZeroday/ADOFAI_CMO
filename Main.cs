@@ -35,5 +35,19 @@ namespace ADOFAI_CMO
       return true;
     }
 
+    private static void OnGUI(UnityModManager.ModEntry modEntry)
+    {
+      //
+    }
+
+    private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
+    {
+      //
+    }
+  }
+
+  public class ModSetting : UnityModManager.ModSettings
+  {
+
   }
 }
